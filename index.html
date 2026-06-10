@@ -68,23 +68,24 @@
 
     .logo-title {
       margin: 0;
-      font-size: clamp(28px, 3.5vw, 52px);
+      font-size: clamp(42px, 5vw, 72px);
       font-weight: 900;
       line-height: 1;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       color: #ffd700;
       text-shadow:
-        0 0 8px rgba(255,215,0,.30),
-        0 0 18px rgba(255,215,0,.15);
+        0 0 12px rgba(255,215,0,.35),
+        0 0 25px rgba(255,215,0,.20),
+        0 0 45px rgba(255,215,0,.10);
     }
 
     .logo-subtitle {
-      margin-top: 8px;
+      margin: 12px 0 0;
       color: #dbeafe;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
-      letter-spacing: .3px;
+      letter-spacing: .4px;
     }
 
     .header-right {
@@ -687,11 +688,36 @@
     .game-row:last-child { border-bottom: 0; }
 
     .game-teams {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
       font-weight: 800;
       line-height: 1.35;
+      width: 100%;
+    }
+
+    .game-teams .team-home {
+      text-align: left;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .game-teams .versus {
+      text-align: center;
+      font-weight: 900;
+      color: #ffffff;
+      min-width: 42px;
+    }
+
+    .game-teams .team-away {
+      text-align: right;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .game-meta {
@@ -2207,9 +2233,9 @@ function renderizarListaJogosCentral(jogos, vazio, mostrarLive = false) {
   return jogos.map(j => `
     <div class="game-row">
       <div class="game-teams">
-        <span>${flagTexto(j.time1)} ${traduzir(j.time1)}</span>
-        <span>${temPlacar(j) ? `${j.gols1} x ${j.gols2}` : "x"}</span>
-        <span>${traduzir(j.time2)} ${flagTexto(j.time2)}</span>
+        <span class="team-home">${flagTexto(j.time1)} ${traduzir(j.time1)}</span>
+        <span class="versus">${temPlacar(j) ? `${j.gols1} x ${j.gols2}` : "x"}</span>
+        <span class="team-away">${traduzir(j.time2)} ${flagTexto(j.time2)}</span>
       </div>
       <div class="game-meta">
         ${formatarData(j)} • ${j.grupo || "Grupo não informado"}
