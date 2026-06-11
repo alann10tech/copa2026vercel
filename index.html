@@ -313,17 +313,6 @@
       padding: 16px;
       margin-bottom: 18px;
     }
-
-    .alert {
-      padding: 14px;
-      border-radius: 14px;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
-      background: rgba(250,204,21,.12);
-      color: #fef3c7;
-    }
-
-
     .selector-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1101,11 +1090,7 @@
       Carregando seleções...
     </div>
   </div>
-
-  <h2 class="section-title">🚨 Alertas das seleções acompanhadas</h2>
-  <div id="alertas" class="box">Carregando alertas...</div>
-
-  <h2 class="section-title">🔥 Jogos de hoje das seleções acompanhadas</h2>
+<h2 class="section-title">🔥 Jogos de hoje das seleções acompanhadas</h2>
   <div id="jogosHoje" class="box">Carregando jogos de hoje...</div>
 
   <h2 class="section-title">⭐ Seleções acompanhadas</h2>
@@ -1675,8 +1660,6 @@ async function carregarDados() {
   } catch (erro) {
     document.getElementById("cards").innerHTML =
       `<div class="error">Erro ao carregar dados: ${erro.message}</div>`;
-    document.getElementById("alertas").innerHTML =
-      `<div class="error">Não foi possível carregar os dados da Football-Data. Verifique se a variável FOOTBALL_DATA_TOKEN foi criada na Vercel.</div>`;
   }
 }
 
@@ -2013,30 +1996,6 @@ function renderizarStats(lista) {
   if (nota) {
     nota.innerText = Math.round(percentual) + "% do objetivo";
   }
-}
-
-function renderizarAlertas(lista) {
-  const div = document.getElementById("alertas");
-
-  if (!lista.length) {
-    div.innerHTML = `<div class="alert">Nenhuma seleção selecionada para acompanhar.</div>`;
-    return;
-  }
-
-  const classificados = lista.filter(x => x.status.tipo === "classificacao");
-  const risco = lista.filter(x => x.status.tipo !== "classificacao");
-
-  let html = "";
-
-  if (classificados.length > 0) {
-    html += `<div class="alert">🎉 Na zona de classificação: ${classificados.map(x => flagTexto(x.nome) + " " + traduzir(x.nome)).join(", ")}</div>`;
-  }
-
-  if (risco.length > 0) {
-    html += `<div class="alert">⚠️ Ainda precisam de atenção: ${risco.map(x => flagTexto(x.nome) + " " + traduzir(x.nome)).join(", ")}</div>`;
-  }
-
-  div.innerHTML = html || `<div class="alert">Aguardando dados da competição.</div>`;
 }
 
 function renderizarJogosHoje() {
@@ -2576,8 +2535,7 @@ function renderizarTudo() {
   const lista = listaStatus();
 
   renderizarSeletor();
-  renderizarAlertas(lista);
-  renderizarJogosHoje();
+renderizarJogosHoje();
   renderizarCentralJogos();
   renderizarHistoricoJogos();
   renderizarCards(lista);
