@@ -1548,12 +1548,31 @@ function normalizarJogo(jogo) {
   const gols1 = jogo.score?.fullTime?.home ?? jogo.score?.halfTime?.home ?? jogo.score1;
   const gols2 = jogo.score?.fullTime?.away ?? jogo.score?.halfTime?.away ?? jogo.score2;
 
+  let dataLocal = jogo.date || "";
+  let horaLocal = jogo.time || "";
+  let timestamp = Number.MAX_SAFE_INTEGER;
+
+  if (jogo.utcDate) {
+    const dataObj = new Date(jogo.utcDate);
+    timestamp = dataObj.getTime();
+
+    // Converte a data/hora UTC da Football-Data para o horário local do navegador.
+    const ano = dataObj.getFullYear();
+    const mes = String(dataObj.getMonth() + 1).padStart(2, "0");
+    const dia = String(dataObj.getDate()).padStart(2, "0");
+
+    dataLocal = `${ano}-${mes}-${dia}`;
+    horaLocal = dataObj.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
   return {
     rodada: jogo.matchday ? "Rodada " + jogo.matchday : (jogo.stage || jogo.round || "Rodada"),
-    data: jogo.utcDate ? jogo.utcDate.slice(0, 10) : (jogo.date || ""),
-    hora: jogo.utcDate
-      ? new Date(jogo.utcDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-      : (jogo.time || ""),
+    data: dataLocal,
+    hora: horaLocal,
+    timestamp,
     time1,
     time2,
     grupo: formatarGrupoFootballData(jogo.group, jogo.stage, jogo.matchday),
@@ -2189,6 +2208,8 @@ function ehJogoFinalizado(jogo) {
 }
 
 function proximaDataTimestamp(jogo) {
+  if (Number.isFinite(jogo.timestamp)) return jogo.timestamp;
+
   const texto = `${jogo.data || ""}T${jogo.hora || "00:00"}`;
   const d = new Date(texto);
   return isNaN(d.getTime()) ? Number.MAX_SAFE_INTEGER : d.getTime();
