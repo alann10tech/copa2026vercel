@@ -736,6 +736,90 @@
       margin-left: 6px;
     }
 
+    .historico-section {
+      max-width: 1320px;
+      margin: 24px auto 0;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 18px;
+      background: rgba(7, 17, 31, .58);
+      box-shadow: 0 16px 36px rgba(0,0,0,.30);
+    }
+
+    .historico-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .historico-head h2 {
+      margin: 0;
+      font-size: 23px;
+    }
+
+    .historico-list {
+      display: grid;
+      gap: 10px;
+      max-height: 430px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .historico-row {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--border);
+    }
+
+    .historico-times {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .historico-home {
+      text-align: left;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .historico-placar {
+      text-align: center;
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .historico-away {
+      text-align: right;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .historico-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .historico-status {
+      font-weight: 900;
+      color: var(--blue);
+    }
+
     .knockout-actions {
       display: flex;
       justify-content: flex-end;
@@ -970,69 +1054,31 @@
       <div class="loading">Carregando central de jogos...</div>
     </div>
     <div class="knockout-actions">
-      <button class="knockout-btn" onclick="abrirMataMata()">🏆 Ver mata-mata</button>
       <button class="knockout-btn" onclick="abrirGrupos()">🌍 Ver grupos</button>
+      <button class="knockout-btn" onclick="abrirMataMata()">🏆 Ver mata-mata</button>
+      <button class="knockout-btn" onclick="carregarDados()">🔄 Atualizar agora</button>
     </div>
   </section>
 
 
-  <div class="top-panel">
-    <div class="grid-stats">
-      <div class="stat stat-main stat-green">
-        <div class="stat-icon">👥</div>
-        <span>Total de seleções</span>
-        <div class="divider"></div>
-        <strong id="statTotalSelecoes">0</strong>
-      </div>
-
-      <div class="stat stat-main stat-yellow">
-        <div class="stat-icon">⭐</div>
-        <span>Seleções acompanhadas</span>
-        <div class="divider"></div>
-        <strong id="statSelecionadas">0</strong>
-      </div>
-
-      <div class="stat stat-main stat-green">
-        <div class="stat-icon">✅</div>
-        <span>Na zona de classificação</span>
-        <div class="divider"></div>
-        <strong id="statClassificadas">0</strong>
-      </div>
-
-      <div class="stat stat-main stat-yellow">
-        <div class="stat-icon">⚠️</div>
-        <span>Em disputa / risco</span>
-        <div class="divider"></div>
-        <strong id="statDisputa">0</strong>
-      </div>
-
-      <div class="stat stat-main stat-red">
-        <div class="stat-icon">❌</div>
-        <span>Fora da zona</span>
-        <div class="divider"></div>
-        <strong id="statEliminadas">0</strong>
-      </div>
+  <section class="historico-section">
+    <div class="historico-head">
+      <h2>📜 Histórico de jogos</h2>
+      <span class="badge info">Busca por seleção</span>
     </div>
 
-    <div class="wide-stats">
-      <div class="stat stat-wide stat-blue">
-        <span>🎯 Progresso</span>
-        <strong id="statProgresso">0/0</strong>
-        <div class="progress"><div id="barraProgresso"></div></div>
-        <div class="progress-note" id="notaProgresso">0% do objetivo</div>
-      </div>
+    <input
+      id="buscaHistoricoJogos"
+      class="search-input"
+      type="text"
+      placeholder="Procurar por seleção..."
+      oninput="renderizarHistoricoJogos()"
+    />
 
-      <div class="stat stat-wide stat-blue">
-        <span>🗓️ Última atualização</span>
-        <strong id="ultimaAtualizacao">Carregando...</strong>
-        <div class="progress-note">Atualização automática a cada 60 segundos</div>
-      </div>
+    <div id="historicoJogos" class="historico-list">
+      <div class="loading">Carregando histórico de jogos...</div>
     </div>
-  </div>
-
-  <div class="tools" style="justify-content:flex-end;">
-    <button onclick="carregarDados()">🔄 Atualizar agora</button>
-  </div>
+  </section>
 
 
   <h2 class="section-title">✅ Escolher seleções para acompanhar</h2>
@@ -1100,7 +1146,7 @@
 </div>
 
 <footer>
-  Fonte: Football-Data API via Vercel Function. Suas escolhas ficam salvas no navegador e o painel atualiza automaticamente a cada 60 segundos.
+  Fonte: Football-Data API via Vercel Function. Suas escolhas ficam salvas no navegador e os dados são sincronizados automaticamente.
 </footer>
 
 <script>
@@ -1621,14 +1667,16 @@ async function carregarDados() {
 
     renderizarTudo();
 
-    document.getElementById("ultimaAtualizacao").innerText =
-      new Date().toLocaleString("pt-BR");
+    const ultimaAtualizacao = document.getElementById("ultimaAtualizacao");
+    if (ultimaAtualizacao) {
+      ultimaAtualizacao.innerText = new Date().toLocaleString("pt-BR");
+    }
 
   } catch (erro) {
     document.getElementById("cards").innerHTML =
       `<div class="error">Erro ao carregar dados: ${erro.message}</div>`;
     document.getElementById("alertas").innerHTML =
-      `<div class="error">Não foi possível carregar os dados da Football-Data. Verifique se a variável FOOTBALL_DATA_TOKEN foi criada no Netlify.</div>`;
+      `<div class="error">Não foi possível carregar os dados da Football-Data. Verifique se a variável FOOTBALL_DATA_TOKEN foi criada na Vercel.</div>`;
   }
 }
 
@@ -2470,14 +2518,68 @@ function renderizarRodadaMataMata(titulo, jogos, prefixo = "Jogo") {
   `;
 }
 
+
+function renderizarHistoricoJogos() {
+  const div = document.getElementById("historicoJogos");
+  if (!div) return;
+
+  const termo = (document.getElementById("buscaHistoricoJogos")?.value || "")
+    .toLowerCase()
+    .trim();
+
+  let jogos = [...estadoAtual.jogos].sort((a, b) =>
+    proximaDataTimestamp(a) - proximaDataTimestamp(b)
+  );
+
+  if (termo) {
+    jogos = jogos.filter(j => {
+      const casa = traduzir(j.time1).toLowerCase();
+      const fora = traduzir(j.time2).toLowerCase();
+      const casaOriginal = String(j.time1 || "").toLowerCase();
+      const foraOriginal = String(j.time2 || "").toLowerCase();
+
+      return casa.includes(termo) ||
+             fora.includes(termo) ||
+             casaOriginal.includes(termo) ||
+             foraOriginal.includes(termo);
+    });
+  }
+
+  if (!jogos.length) {
+    div.innerHTML = `<div class="loading">Nenhum jogo encontrado para essa busca.</div>`;
+    return;
+  }
+
+  div.innerHTML = jogos.map(j => {
+    const placar = temPlacar(j) ? `${j.gols1} x ${j.gols2}` : "x";
+    const status = ehJogoAoVivo(j)
+      ? "🔴 AO VIVO"
+      : (ehJogoFinalizado(j) ? "✅ Finalizado" : "⏳ Agendado");
+
+    return `
+      <div class="historico-row">
+        <div class="historico-times">
+          <div class="historico-home">${flagTexto(j.time1)} ${traduzir(j.time1)}</div>
+          <div class="historico-placar">${placar}</div>
+          <div class="historico-away">${traduzir(j.time2)} ${flagTexto(j.time2)}</div>
+        </div>
+        <div class="historico-meta">
+          <span>${formatarData(j)} • ${j.grupo || "Grupo não informado"}</span>
+          <span class="historico-status">${status}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 function renderizarTudo() {
   const lista = listaStatus();
 
   renderizarSeletor();
-  renderizarStats(lista);
   renderizarAlertas(lista);
   renderizarJogosHoje();
   renderizarCentralJogos();
+  renderizarHistoricoJogos();
   renderizarCards(lista);
   renderizarTabelaAposta(lista);
   renderizarTabelasCompletas();
@@ -2488,8 +2590,42 @@ function filtrar(tipo) {
   renderizarTudo();
 }
 
-carregarDados();
-setInterval(carregarDados, 60000);
+
+let intervaloAtualizacao = null;
+let tempoAtualizacaoAtual = null;
+
+function iniciarAtualizacaoInteligente() {
+  if (intervaloAtualizacao) {
+    clearInterval(intervaloAtualizacao);
+  }
+
+  const possuiJogoAoVivo =
+    estadoAtual.jogos &&
+    estadoAtual.jogos.some(j => ehJogoAoVivo(j));
+
+  const tempoAtualizacao = possuiJogoAoVivo ? 15000 : 60000;
+  tempoAtualizacaoAtual = tempoAtualizacao;
+
+  intervaloAtualizacao = setInterval(async () => {
+    try {
+      await carregarDados();
+
+      const agoraTemAoVivo =
+        estadoAtual.jogos &&
+        estadoAtual.jogos.some(j => ehJogoAoVivo(j));
+
+      const novoTempo = agoraTemAoVivo ? 15000 : 60000;
+
+      if (novoTempo !== tempoAtualizacaoAtual) {
+        iniciarAtualizacaoInteligente();
+      }
+    } catch (erro) {
+      console.error("Erro na atualização automática", erro);
+    }
+  }, tempoAtualizacao);
+}
+
+carregarDados().then(() => iniciarAtualizacaoInteligente());
 </script>
 </body>
 </html>
