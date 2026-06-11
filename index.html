@@ -1572,6 +1572,66 @@ function formatarGrupoFootballData(grupo, stage, matchday) {
   return matchday ? "Rodada " + matchday : "Grupo não informado";
 }
 
+
+function chavePlacarJogo(jogo) {
+  const id = jogo.id || jogo.matchId || jogo.codigo || "";
+  if (id) return "id:" + id;
+
+  const casa = jogo.homeTeam?.name || jogo.team1?.name || jogo.team1 || jogo.time1 || "";
+  const fora = jogo.awayTeam?.name || jogo.team2?.name || jogo.team2 || jogo.time2 || "";
+  const data = jogo.utcDate || jogo.date || jogo.data || "";
+  return `${data}|${casa}|${fora}`;
+}
+
+function carregarPlacaresSalvos() {
+  try {
+    return JSON.parse(localStorage.getItem("placaresCopa2026") || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function salvarPlacaresSalvos(placares) {
+  localStorage.setItem("placaresCopa2026", JSON.stringify(placares));
+}
+
+function aplicarCachePlacar(jogoOriginal, jogoNormalizado) {
+  const chave = chavePlacarJogo(jogoOriginal);
+  const placares = carregarPlacaresSalvos();
+
+  if (temPlacar(jogoNormalizado)) {
+    placares[chave] = {
+      gols1: jogoNormalizado.gols1,
+      gols2: jogoNormalizado.gols2,
+      status: jogoNormalizado.status,
+      atualizadoEm: Date.now()
+    };
+
+    salvarPlacaresSalvos(placares);
+    return jogoNormalizado;
+  }
+
+  const salvo = placares[chave];
+
+  if (
+    salvo &&
+    salvo.gols1 !== null &&
+    salvo.gols1 !== undefined &&
+    salvo.gols2 !== null &&
+    salvo.gols2 !== undefined
+  ) {
+    jogoNormalizado.gols1 = salvo.gols1;
+    jogoNormalizado.gols2 = salvo.gols2;
+
+    if (!jogoNormalizado.status || String(jogoNormalizado.status).toUpperCase() === "TIMED") {
+      jogoNormalizado.status = salvo.status || "IN_PLAY";
+    }
+  }
+
+  return jogoNormalizado;
+}
+
+
 function normalizarJogo(jogo) {
   const time1 = jogo.homeTeam?.name || jogo.team1?.name || jogo.team1;
   const time2 = jogo.awayTeam?.name || jogo.team2?.name || jogo.team2;
@@ -1599,7 +1659,8 @@ function normalizarJogo(jogo) {
     });
   }
 
-  return {
+  const jogoNormalizado = {
+    id: jogo.id || jogo.matchId || jogo.codigo || "",
     rodada: jogo.matchday ? "Rodada " + jogo.matchday : (jogo.stage || jogo.round || "Rodada"),
     data: dataLocal,
     hora: horaLocal,
@@ -1612,6 +1673,8 @@ function normalizarJogo(jogo) {
     gols2,
     status: jogo.status || ""
   };
+
+  return aplicarCachePlacar(jogo, jogoNormalizado);
 }
 
 function extrairJogos(dados) {
@@ -1998,9 +2061,18 @@ function renderizarStats(lista) {
   }
 }
 
+
+function dataHojeLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 function renderizarJogosHoje() {
   const div = document.getElementById("jogosHoje");
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = dataHojeLocal();
 
   const jogos = estadoAtual.jogos.filter(j => {
     const envolveAposta = estadoAtual.selecionados.includes(j.time1) || estadoAtual.selecionados.includes(j.time2);
@@ -2226,7 +2298,7 @@ function renderizarCentralJogos() {
   const div = document.getElementById("centralJogos");
   if (!div) return;
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = dataHojeLocal();
   const jogos = [...estadoAtual.jogos];
 
   const aoVivo = jogos.filter(ehJogoAoVivo).slice(0, 5);
