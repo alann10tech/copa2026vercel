@@ -1804,7 +1804,9 @@ function normalizarJogo(jogo) {
     local: jogo.venue || jogo.ground || "",
     gols1,
     gols2,
-    status: jogo.status || ""
+    status: jogo.status || "",
+    stage: jogo.stage || jogo.round || "",
+    winner: jogo.score?.winner || jogo.winner || ""
   };
 
   return aplicarCachePlacar(jogo, jogoNormalizado);
@@ -2609,16 +2611,136 @@ function montarFase32Regulamento2026() {
   ];
 }
 
+function normalizarStageMataMata(stage) {
+  return String(stage || "").toUpperCase().replace(/[\s-]+/g, "_");
+}
+
+function jogosPorStageMataMata(stages) {
+  const aceitos = new Set(stages.map(normalizarStageMataMata));
+
+  return estadoAtual.jogos
+    .filter(j => aceitos.has(normalizarStageMataMata(j.stage || j.rodada)))
+    .sort((a, b) => {
+      const ta = Number.isFinite(a.timestamp) ? a.timestamp : Number.MAX_SAFE_INTEGER;
+      const tb = Number.isFinite(b.timestamp) ? b.timestamp : Number.MAX_SAFE_INTEGER;
+      return ta - tb;
+    });
+}
+
+function mapaJogosOficiaisMataMata() {
+  const mapa = new Map();
+
+  const adicionar = (numeros, stages) => {
+    const jogos = jogosPorStageMataMata(stages);
+    numeros.forEach((numero, i) => {
+      if (jogos[i]) mapa.set(numero, jogos[i]);
+    });
+  };
+
+  adicionar([73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
+    ["LAST_32", "ROUND_OF_32", "ROUND_32"]);
+  adicionar([89,90,91,92,93,94,95,96],
+    ["LAST_16", "ROUND_OF_16", "ROUND_16"]);
+  adicionar([97,98,99,100],
+    ["QUARTER_FINALS", "QUARTER_FINAL", "QUARTERFINALS"]);
+  adicionar([101,102],
+    ["SEMI_FINALS", "SEMI_FINAL", "SEMIFINALS"]);
+  adicionar([103],
+    ["THIRD_PLACE", "THIRD_PLACE_PLAY_OFF", "PLAY_OFF_FOR_THIRD_PLACE"]);
+  adicionar([104],
+    ["FINAL"]);
+
+  return mapa;
+}
+
+function nomeTimeMataMata(nome) {
+  if (!nome) return "A definir";
+  return `${flagTexto(nome)} ${traduzir(nome)}`;
+}
+
+function vencedorJogoMataMata(jogo) {
+  if (!jogo || !temPlacar(jogo)) return null;
+
+  const winner = String(jogo.winner || "").toUpperCase();
+
+  if (winner === "HOME_TEAM" || winner === "HOME") return jogo.time1;
+  if (winner === "AWAY_TEAM" || winner === "AWAY") return jogo.time2;
+
+  const g1 = Number(jogo.gols1);
+  const g2 = Number(jogo.gols2);
+
+  if (g1 > g2) return jogo.time1;
+  if (g2 > g1) return jogo.time2;
+
+  return null;
+}
+
+function perdedorJogoMataMata(jogo) {
+  const vencedor = vencedorJogoMataMata(jogo);
+  if (!vencedor || !jogo) return null;
+  return vencedor === jogo.time1 ? jogo.time2 : jogo.time1;
+}
+
+function preencherConfrontoReal(base, mapa) {
+  const real = mapa.get(base.numero);
+
+  if (real) {
+    return {
+      ...base,
+      a: nomeTimeMataMata(real.time1),
+      b: nomeTimeMataMata(real.time2),
+      jogoReal: real
+    };
+  }
+
+  return { ...base };
+}
+
+function substituirReferenciaVencedor(texto, mapa) {
+  const match = String(texto || "").match(/^Vencedor J(\d+)$/i);
+  if (!match) return texto;
+
+  const numero = Number(match[1]);
+  const vencedor = vencedorJogoMataMata(mapa.get(numero));
+  return vencedor ? nomeTimeMataMata(vencedor) : texto;
+}
+
+function substituirReferenciaPerdedor(texto, mapa) {
+  const match = String(texto || "").match(/^Perdedor J(\d+)$/i);
+  if (!match) return texto;
+
+  const numero = Number(match[1]);
+  const perdedor = perdedorJogoMataMata(mapa.get(numero));
+  return perdedor ? nomeTimeMataMata(perdedor) : texto;
+}
+
+function resolverConfrontoMataMata(base, mapa) {
+  const comJogoReal = preencherConfrontoReal(base, mapa);
+
+  if (comJogoReal.jogoReal) return comJogoReal;
+
+  return {
+    ...comJogoReal,
+    a: substituirReferenciaPerdedor(
+         substituirReferenciaVencedor(comJogoReal.a, mapa), mapa),
+    b: substituirReferenciaPerdedor(
+         substituirReferenciaVencedor(comJogoReal.b, mapa), mapa)
+  };
+}
+
 function renderizarMataMata() {
   const div = document.getElementById("conteudoMataMata");
   if (!div) return;
 
-  const fase32 = montarFase32Regulamento2026();
+  const mapa = mapaJogosOficiaisMataMata();
+  let fase32 = montarFase32Regulamento2026();
 
   if (!fase32.length) {
     div.innerHTML = `<div class="loading">O mata-mata será montado automaticamente quando os grupos estiverem disponíveis.</div>`;
     return;
   }
+
+  fase32 = fase32.map(j => resolverConfrontoMataMata(j, mapa));
 
   const oitavas = [
     { numero: 89, a: "Vencedor J74", b: "Vencedor J77", regra: "W74 x W77" },
@@ -2629,22 +2751,25 @@ function renderizarMataMata() {
     { numero: 94, a: "Vencedor J81", b: "Vencedor J82", regra: "W81 x W82" },
     { numero: 95, a: "Vencedor J86", b: "Vencedor J88", regra: "W86 x W88" },
     { numero: 96, a: "Vencedor J85", b: "Vencedor J87", regra: "W85 x W87" }
-  ];
+  ].map(j => resolverConfrontoMataMata(j, mapa));
 
   const quartas = [
     { numero: 97, a: "Vencedor J89", b: "Vencedor J90" },
     { numero: 98, a: "Vencedor J93", b: "Vencedor J94" },
     { numero: 99, a: "Vencedor J91", b: "Vencedor J92" },
     { numero: 100, a: "Vencedor J95", b: "Vencedor J96" }
-  ];
+  ].map(j => resolverConfrontoMataMata(j, mapa));
 
   const semis = [
     { numero: 101, a: "Vencedor J97", b: "Vencedor J98" },
     { numero: 102, a: "Vencedor J99", b: "Vencedor J100" }
-  ];
+  ].map(j => resolverConfrontoMataMata(j, mapa));
 
-  const final = { numero: 104, a: "Vencedor J101", b: "Vencedor J102", regra: "Final" };
-  const terceiro = { numero: 103, a: "Perdedor J101", b: "Perdedor J102", regra: "3º lugar" };
+  const final = resolverConfrontoMataMata(
+    { numero: 104, a: "Vencedor J101", b: "Vencedor J102", regra: "Final" }, mapa);
+
+  const terceiro = resolverConfrontoMataMata(
+    { numero: 103, a: "Perdedor J101", b: "Perdedor J102", regra: "3º lugar" }, mapa);
 
   const esquerda32 = fase32.slice(0, 8);
   const direita32 = fase32.slice(8).reverse();
@@ -2676,17 +2801,21 @@ function renderizarMataMata() {
     </div>
 
     <div class="bracket-note">
-      O chaveamento agora começa nas duas laterais e afunila até a final no centro, mantendo a numeração e o caminho dos jogos.
+      Os confrontos são preenchidos automaticamente com os jogos e vencedores retornados pela API.
     </div>
   `;
 }
 
 function renderizarJogoMataMata(j, classeExtra = "") {
+  const placar = j.jogoReal && temPlacar(j.jogoReal)
+    ? `${j.jogoReal.gols1} x ${j.jogoReal.gols2}`
+    : "VS";
+
   return `
     <div class="bracket-match ${classeExtra}">
       <div class="bracket-game-label">Jogo ${j.numero}${j.regra ? ` • ${j.regra}` : ""}</div>
       <div class="bracket-team"><span>${j.a}</span></div>
-      <div class="bracket-vs">VS</div>
+      <div class="bracket-vs">${placar}</div>
       <div class="bracket-team"><span>${j.b}</span></div>
     </div>
   `;
